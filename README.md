@@ -16,7 +16,7 @@ Beachtet folgende Vorgaben:
 - Optional: Verwendet die von euch schon erstellte Benutzerverwaltung
 - Optional: Anzeige der Anzahl der „Likes“ und die Anzahl der Follower unter jedem Tweet
 
-## Schritt 1
+## Schritt 1 - Neues Projekt
 Erstellen des Blazor Projekts. Dazu die Projektvorlage "Blazor Web App" verwenden.
 Bei den zusätzlichen Information folgende Einstellungen wählen:
 - Framework: .NET 8.0 oder eine höhere LTS Version
@@ -29,7 +29,9 @@ Bei den zusätzlichen Information folgende Einstellungen wählen:
 Diese Einstellungen erstellen eine Blazor Server App mit Sample Pages und einer Benutzerverwaltung.
 Als Connected Service wird eine Connection zur SQL Server Express LocalDB angelegt (für die Benutzerverwaltung). Es wird dazu das EF verwendet. Die Migration wurde aber noch nicht durchgeführt.
 Die Migration über die Package Manager Console starten (Menü View -> Other Windows): 
-PM> Update-Database
+```
+Update-Database
+```
 
 Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch erstellt:
 - Home: Die Startseite der Applikation
@@ -38,7 +40,100 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 - Auth Required: Eine Page die nur von angemeldeten Usern aufgerufen werden kann
 - Register: Page zum registrieren eines Users
 - Login: Page zum Anmelden eines Users
-
-
-
-
+## Schritt 2 - Tweets und Likes
+Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
+Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
+### ApplicationUser
+Erweiterung um die Properties: Location, ProfilePicture, BackgroundPicture
+```
+Add-Migration AddUserProperties
+Update-Database
+```
+### Tweet
+Neue Klasse die die Tweets der User speichert: Id, Text, ApplicationUserId
+Anlegen der Navigationproperties in Tweet und ApplicationUser
+```
+public ICollection<Tweet>? Tweets { get; set; }
+...
+public ApplicationUser? ApplicationUser { get; set; }
+```
+Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehung
+```
+builder.Entity<Tweet>()
+    .HasOne(t => t.ApplicationUser)
+    .WithMany(u => u.Tweets)
+    .HasForeignKey(t => t.ApplicationUserId);
+```
+Anlegen des DbSet für Tweets
+```
+public DbSet<Tweet> Tweets { get; set; } = default!;
+```
+```
+Add-Migration AddTweets
+Update-Database
+```
+### Like
+Neue Klasse die die Likes der User speichert. Hat Foreign Keys zu Tweets und ApplicationUser: Id, ApplicationUserId, TweetId
+Anlegen der Navigationproperties in Like, Tweet und ApplicationUser
+```
+public Tweet? Tweet { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+```
+Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehungen
+```
+builder.Entity<Like>()
+    .HasOne(l => l.ApplicationUser)
+    .WithMany(u => u.Likes)
+    .HasForeignKey(l => l.ApplicationUserId);
+builder.Entity<Like>()
+    .HasOne(l => l.Tweet)
+    .WithMany(t => t.Likes)
+    .HasForeignKey(l => l.TweetId);
+```
+Anlegen des DbSet für Tweets
+```
+public DbSet<Like> Likes { get; set; } = default!;
+```
+```
+Add-Migration AddLikes
+Update-Database
+```
+## Schritt 3 - Umbau Home Page
+### Aufruf nur mit Authorisierung
+Wird über ein Attribut gesteuert
+```
+@attribute [Authorize]
+```
+### Formular mit Eingabefeld für Tweet und einem Post Button
+Hier wird twoway DataBinding verwendet
+```
+<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_model.Text" placeholder="Was gibt's Neues?" />
+        <ValidationMessage For="@(() => _model.Text)" />
+    </div>
+    <button type="submit" class="btn btn-primary">Posten</button>
+</EditForm>
+```
+Das Model ist hier ein Tweet Objekt
+```
+private readonly Tweet _model = new();
+```
+### Validierung der Eingaben
+Die Kriterien für die Valdidierung werden über Attribute bei den Properties gesteuert
+```
+[Required(ErrorMessage = "Der Text des Tweets ist erforderlich.")]
+[MaxLength(280, ErrorMessage = "Der Text des Tweets darf maximal 280 Zeichen lang sein.")]
+public string? Text { get; set; }
+```
+### Speichern
+Nach der Ermittlung der Id des angemeldeten Users wird der Tweet in der Datenbank gespeichert
+```
+_model.ApplicationUserId = userId;
+DbContext.Tweets.Add(_model);
+await DbContext.SaveChangesAsync();
+```
