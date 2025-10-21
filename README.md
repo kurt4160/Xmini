@@ -16,7 +16,7 @@ Beachtet folgende Vorgaben:
 - Optional: Verwendet die von euch schon erstellte Benutzerverwaltung
 - Optional: Anzeige der Anzahl der „Likes“ und die Anzahl der Follower unter jedem Tweet
 
-## Schritt 1
+## Schritt 1 - Neues Projekt
 Erstellen des Blazor Projekts. Dazu die Projektvorlage "Blazor Web App" verwenden.
 Bei den zusätzlichen Information folgende Einstellungen wählen:
 - Framework: .NET 8.0 oder eine höhere LTS Version
@@ -40,7 +40,7 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 - Auth Required: Eine Page die nur von angemeldeten Usern aufgerufen werden kann
 - Register: Page zum registrieren eines Users
 - Login: Page zum Anmelden eines Users
-## Schritt 2
+## Schritt 2 - Tweets und Likes
 Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
 ### ApplicationUser
@@ -100,4 +100,40 @@ public DbSet<Like> Likes { get; set; } = default!;
 ```
 Add-Migration AddLikes
 Update-Database
+```
+##Schritt 3 - Umbau Home Page
+###Aufruf nur mit Authorisierung
+Wird über ein Attribut gesteuert
+```
+@attribute [Authorize]
+```
+###Formular mit Eingabefeld für Tweet und einem Post Button
+Hier wird twoway DataBinding verwendet
+```
+<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_model.Text" placeholder="Was gibt's Neues?" />
+        <ValidationMessage For="@(() => _model.Text)" />
+    </div>
+    <button type="submit" class="btn btn-primary">Posten</button>
+</EditForm>
+```
+Das Model ist hier ein Tweet Objekt
+```
+private readonly Tweet _model = new();
+```
+###Validierung der Eingaben
+Die Kriterien für die Valdidierung werden über Attribute bei den Properties gesteuert
+```
+[Required(ErrorMessage = "Der Text des Tweets ist erforderlich.")]
+[MaxLength(280, ErrorMessage = "Der Text des Tweets darf maximal 280 Zeichen lang sein.")]
+public string? Text { get; set; }
+```
+###Speichern
+Nach der Ermittlung der Id des angemeldeten Users wird der Tweet in der Datenbank gespeichert
+```
+_model.ApplicationUserId = userId;
+DbContext.Tweets.Add(_model);
+await DbContext.SaveChangesAsync();
 ```
