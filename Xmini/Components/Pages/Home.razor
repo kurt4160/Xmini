@@ -38,6 +38,10 @@
             <div style="white-space: pre-wrap;">
                 @((tweet.Text) ?? string.Empty)
             </div>
+            <div>
+                <button class="btn btn-secondary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+                @((tweet.Likes?.Count) ?? 0)
+            </div>
         </div>
         <hr />
     }
@@ -47,6 +51,7 @@
     // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
     private Tweet _modelTweet = new();
     private List<Tweet>? _modelLastTweets;
+    private string? _userId;
 
     /// <summary>
     /// Wird aufgerufen, wenn die Komponente initialisiert wird.
@@ -54,6 +59,7 @@
     /// <returns></returns>
     protected override async Task OnInitializedAsync()
     {
+        await GetCurrentUserId();
         await LoadTweets();
         await base.OnInitializedAsync();
     }
@@ -64,13 +70,28 @@
     private async Task LoadTweets()
     {
         // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+        // Inkludiere die zugehörigen Benutzer und die Likes
         _modelLastTweets = await DbContext.Tweets
             .OrderByDescending(t => t.CreatedAt)
             .Include(u => u.ApplicationUser)
+            .Include(l => l.Likes)
             .Take(10)
             .ToListAsync();
         // UI aktualisieren
         StateHasChanged();
+    }
+    /// <summary>
+    /// Die aktuelle Benutzer-ID ermitteln.
+    /// </summary>
+    /// <returns></returns>
+    private async Task GetCurrentUserId()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
     }
     /// <summary>
     /// Wird aufgerufen, wenn das Formular erfolgreich übermittelt wurde.
@@ -78,16 +99,11 @@
     /// <returns></returns>
     private async Task HandleValidSubmit()
     {
-        // Aktuellen Benutzer ermitteln
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
         // Sicherstellen, dass der Benutzer authentifiziert ist
-        if (user.Identity?.IsAuthenticated == true)
+        if (_userId != null)
         {
-            // Benutzer-ID aus den Claims extrahieren
-            var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             // Tweet dem Benutzer zuordnen und speichern
-            _modelTweet.ApplicationUserId = userId;
+            _modelTweet.ApplicationUserId = _userId;
             DbContext.Tweets.Add(_modelTweet);
             await DbContext.SaveChangesAsync();
             // Daten neu laden
@@ -96,5 +112,33 @@
             _modelTweet = new Tweet();
         }
     }
-
+    /// <summary>
+    /// Ein Tweet wird geliked oder das Like wird entfernt.
+    /// </summary>
+    /// <param name="tweet"></param>
+    /// <returns></returns>
+    private async Task OnLikeTweet(Tweet tweet)
+    {
+        var newLike = new Like
+        {
+            TweetId = tweet.Id,
+            ApplicationUserId = _userId
+        };
+        // Prüfen, ob der Benutzer den Tweet bereits geliked hat
+        var existingLike = await DbContext.Likes
+            .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == _userId);
+        if (existingLike != null)
+        {
+            // Like entfernen
+            DbContext.Likes.Remove(existingLike);
+        }
+        else
+        {
+            // Neues Like hinzufügen
+            DbContext.Likes.Add(newLike);
+        }
+        await DbContext.SaveChangesAsync();
+        // Daten neu laden
+        await LoadTweets();
+    }
 }
