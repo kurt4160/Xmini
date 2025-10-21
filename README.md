@@ -1,4 +1,21 @@
 # Xmini
+## Aufgabe
+Schreibt eine Applikation die sich wie X verhält.
+Beachtet folgende Vorgaben:
+- Auf der Startseite werden alle Tweets von den Leuten angezeigt denen du folgst
+- Auf der Startseite kann man einen neuen Tweet erstellen (optional kann man ein Bild hinzufügen)
+- Auf der „Entdecken“ Seite werden die Tweets mit den meisten „Likes“ angezeigt. Zusätzlich gibt es die Möglichkeit User zu suchen
+- Tweets kann man „liken“
+- Anderen Usern kann man folgen
+- Über eine Profilseite kann man sich das Profil von Usern ansehen
+  - Name
+  - Standort
+  - Profilbild (optional)
+  - Hintergrundbild für Profil (optional)
+- Optional: User können sich private Nachrichten schicken
+- Optional: Verwendet die von euch schon erstellte Benutzerverwaltung
+- Optional: Anzeige der Anzahl der „Likes“ und die Anzahl der Follower unter jedem Tweet
+
 ## Schritt 1
 Erstellen des Blazor Projekts. Dazu die Projektvorlage "Blazor Web App" verwenden.
 Bei den zusätzlichen Information folgende Einstellungen wählen:
