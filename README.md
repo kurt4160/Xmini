@@ -101,13 +101,13 @@ public DbSet<Like> Likes { get; set; } = default!;
 Add-Migration AddLikes
 Update-Database
 ```
-##Schritt 3 - Umbau Home Page
-###Aufruf nur mit Authorisierung
+## Schritt 3 - Umbau Home Page
+### Aufruf nur mit Authorisierung
 Wird über ein Attribut gesteuert
 ```
 @attribute [Authorize]
 ```
-###Formular mit Eingabefeld für Tweet und einem Post Button
+### Formular mit Eingabefeld für Tweet und einem Post Button
 Hier wird twoway DataBinding verwendet
 ```
 <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
@@ -123,14 +123,14 @@ Das Model ist hier ein Tweet Objekt
 ```
 private readonly Tweet _model = new();
 ```
-###Validierung der Eingaben
+### Validierung der Eingaben
 Die Kriterien für die Valdidierung werden über Attribute bei den Properties gesteuert
 ```
 [Required(ErrorMessage = "Der Text des Tweets ist erforderlich.")]
 [MaxLength(280, ErrorMessage = "Der Text des Tweets darf maximal 280 Zeichen lang sein.")]
 public string? Text { get; set; }
 ```
-###Speichern
+### Speichern
 Nach der Ermittlung der Id des angemeldeten Users wird der Tweet in der Datenbank gespeichert
 ```
 _model.ApplicationUserId = userId;
