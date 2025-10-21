@@ -189,3 +189,40 @@ foreach (var tweet in _modelLastTweets)
     <hr />
 }
 ```
+##Schritt 5 - Like Button hinzufügen
+Unter jedem Tweet soll ein Button angezeigt werden. Neben dem Button die Anzahl der Likes für diesen Tweet.
+Der Button soll den Tweet liken oder das Like entfernen wenn es bereist vom User geliked wurde.
+Button in anderem Style und Text mit Like im Razor hinzufügen
+```
+<div>
+    <button class="btn btn-secondary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+    @((tweet.Likes?.Count) ?? 0)
+</div>
+```
+Methode OnLikeTweet hinzufügen
+```
+private async Task OnLikeTweet(Tweet tweet)
+{
+    var newLike = new Like
+    {
+        TweetId = tweet.Id,
+        ApplicationUserId = _userId
+    };
+    // Prüfen, ob der Benutzer den Tweet bereits geliked hat
+    var existingLike = await DbContext.Likes
+        .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == _userId);
+    if (existingLike != null)
+    {
+        // Like entfernen
+        DbContext.Likes.Remove(existingLike);
+    }
+    else
+    {
+        // Neues Like hinzufügen
+        DbContext.Likes.Add(newLike);
+    }
+    await DbContext.SaveChangesAsync();
+    // Daten neu laden
+    await LoadTweets();
+}
+```
