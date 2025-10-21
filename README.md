@@ -44,11 +44,22 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
 ### ApplicationUser
-Erweiterung um die Properties: Location, ProfilePicture und BackgroundPicture
+Erweiterung um die Properties: Location, ProfilePicture, BackgroundPicture, Tweets
 ```
 Add-Migration AddUserProperties
 Update-Database
 ```
-
-
+### Tweet
+Neue Klasse die die Tweets der User speichert: Id, Text, ApplicationUserId
+Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehung
+```
+builder.Entity<Tweet>()
+    .HasOne(t => t.ApplicationUser)
+    .WithMany(u => u.Tweets)
+    .HasForeignKey(t => t.ApplicationUserId);
+```
+```
+Add-Migration AddTweets
+Update-Database
+```
 
