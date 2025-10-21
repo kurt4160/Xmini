@@ -149,14 +149,16 @@ Eine Methode um die letzten 10 Tweets zu laden
 ```
 private async Task LoadTweets()
 {
-    // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
-    _modelLastTweets = await DbContext.Tweets
-        .OrderByDescending(t => t.CreatedAt)
-        .Include(u => u.ApplicationUser)
-        .Take(10)
-        .ToListAsync();
-    // UI aktualisieren
-    StateHasChanged();
+// Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+// Inkludiere die zugehörigen Benutzer und die Likes
+_modelLastTweets = await DbContext.Tweets
+    .OrderByDescending(t => t.CreatedAt)
+    .Include(u => u.ApplicationUser)
+    .Include(l => l.Likes)
+    .Take(10)
+    .ToListAsync();
+// UI aktualisieren
+StateHasChanged();
 }
 ```
 Die Tweets sollen beim Initialiseren der Page und nach dem Speichern geladen werden
