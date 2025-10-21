@@ -149,14 +149,16 @@ Eine Methode um die letzten 10 Tweets zu laden
 ```
 private async Task LoadTweets()
 {
-    // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
-    _modelLastTweets = await DbContext.Tweets
-        .OrderByDescending(t => t.CreatedAt)
-        .Include(u => u.ApplicationUser)
-        .Take(10)
-        .ToListAsync();
-    // UI aktualisieren
-    StateHasChanged();
+// Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+// Inkludiere die zugehörigen Benutzer und die Likes
+_modelLastTweets = await DbContext.Tweets
+    .OrderByDescending(t => t.CreatedAt)
+    .Include(u => u.ApplicationUser)
+    .Include(l => l.Likes)
+    .Take(10)
+    .ToListAsync();
+// UI aktualisieren
+StateHasChanged();
 }
 ```
 Die Tweets sollen beim Initialiseren der Page und nach dem Speichern geladen werden
@@ -185,5 +187,42 @@ foreach (var tweet in _modelLastTweets)
         </div>
     </div>
     <hr />
+}
+```
+##Schritt 5 - Like Button hinzufügen
+Unter jedem Tweet soll ein Button angezeigt werden. Neben dem Button die Anzahl der Likes für diesen Tweet.
+Der Button soll den Tweet liken oder das Like entfernen wenn es bereist vom User geliked wurde.
+Button in anderem Style und Text mit Like im Razor hinzufügen
+```
+<div>
+    <button class="btn btn-secondary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+    @((tweet.Likes?.Count) ?? 0)
+</div>
+```
+Methode OnLikeTweet hinzufügen
+```
+private async Task OnLikeTweet(Tweet tweet)
+{
+    var newLike = new Like
+    {
+        TweetId = tweet.Id,
+        ApplicationUserId = _userId
+    };
+    // Prüfen, ob der Benutzer den Tweet bereits geliked hat
+    var existingLike = await DbContext.Likes
+        .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == _userId);
+    if (existingLike != null)
+    {
+        // Like entfernen
+        DbContext.Likes.Remove(existingLike);
+    }
+    else
+    {
+        // Neues Like hinzufügen
+        DbContext.Likes.Add(newLike);
+    }
+    await DbContext.SaveChangesAsync();
+    // Daten neu laden
+    await LoadTweets();
 }
 ```
