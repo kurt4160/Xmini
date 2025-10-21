@@ -60,6 +60,15 @@ builder.Entity<Tweet>()
 ```
 Anlegen der Navigationproperties in Tweet und ApplicationUser
 ```
+public ICollection<Tweet>? Tweets { get; set; }
+...
+public ApplicationUser? ApplicationUser { get; set; }
+```
+Anlegen des DbSet für Tweets
+```
+public DbSet<Tweet> Tweets { get; set; } = default!;
+```
+```
 Add-Migration AddTweets
 Update-Database
 ```
@@ -77,6 +86,17 @@ builder.Entity<Like>()
     .HasForeignKey(l => l.TweetId);
 ```
 Anlegen der Navigationproperties in Like, Tweet und ApplicationUser
+```
+public Tweet? Tweet { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+```
+Anlegen des DbSet für Tweets
+```
+public DbSet<Like> Likes { get; set; } = default!;
+```
 ```
 Add-Migration AddLikes
 Update-Database
