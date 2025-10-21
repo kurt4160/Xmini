@@ -29,7 +29,9 @@ Bei den zusätzlichen Information folgende Einstellungen wählen:
 Diese Einstellungen erstellen eine Blazor Server App mit Sample Pages und einer Benutzerverwaltung.
 Als Connected Service wird eine Connection zur SQL Server Express LocalDB angelegt (für die Benutzerverwaltung). Es wird dazu das EF verwendet. Die Migration wurde aber noch nicht durchgeführt.
 Die Migration über die Package Manager Console starten (Menü View -> Other Windows): 
-PM> Update-Database
+```
+Update-Database
+```
 
 Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch erstellt:
 - Home: Die Startseite der Applikation
@@ -38,7 +40,15 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 - Auth Required: Eine Page die nur von angemeldeten Usern aufgerufen werden kann
 - Register: Page zum registrieren eines Users
 - Login: Page zum Anmelden eines Users
-
+## Schritt 2
+Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
+Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
+### ApplicationUser
+Erweiterung um die Properties: Location, ProfilePicture und BackgroundPicture
+```
+Add-Migration AddUserProperties
+Update-Database
+```
 
 
 
