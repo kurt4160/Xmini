@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Xmini.Data
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
 
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ApplicationDbContext DbContext
@@ -9,19 +10,68 @@
 
 <PageTitle>Home</PageTitle>
 
-<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+<EditForm Model="_modelTweet" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <div class="mb-3">
-        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_model.Text" placeholder="Was gibt's Neues?" />
-        <ValidationMessage For="@(() => _model.Text)" />
+        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_modelTweet.Text" placeholder="Was gibt's Neues?" />
+        <ValidationMessage For="@(() => _modelTweet.Text)" />
     </div>
     <button type="submit" class="btn btn-primary">Posten</button>
 </EditForm>
+<hr/>
+
+@if (_modelLastTweets != null && _modelLastTweets.Count > 0)
+{
+    // Alle geladenen Tweets anzeigen
+    // Hierzu Razor-Syntax verwenden
+    foreach (var tweet in _modelLastTweets)
+    {
+        @* mb-3: margin-bottom 3 *@
+        <div class="mb-3">
+            @* fw-bold: font-weight bold *@
+            <div class="fw-bold">
+                @* Username und Create Time *@
+                @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
+                (@tweet.CreatedAt.ToLocalTime())
+            </div>
+            @* white-space: pre-wrap; sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
+            <div style="white-space: pre-wrap;">
+                @((tweet.Text) ?? string.Empty)
+            </div>
+        </div>
+        <hr />
+    }
+}
 
 @code {
     // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
-    private readonly Tweet _model = new();
+    private Tweet _modelTweet = new();
+    private List<Tweet>? _modelLastTweets;
 
+    /// <summary>
+    /// Wird aufgerufen, wenn die Komponente initialisiert wird.
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTweets();
+        await base.OnInitializedAsync();
+    }
+    /// <summary>
+    /// Die letzten 10 Tweets laden.
+    /// </summary>
+    /// <returns></returns>
+    private async Task LoadTweets()
+    {
+        // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+        _modelLastTweets = await DbContext.Tweets
+            .OrderByDescending(t => t.CreatedAt)
+            .Include(u => u.ApplicationUser)
+            .Take(10)
+            .ToListAsync();
+        // UI aktualisieren
+        StateHasChanged();
+    }
     /// <summary>
     /// Wird aufgerufen, wenn das Formular erfolgreich übermittelt wurde.
     /// </summary>
@@ -37,9 +87,13 @@
             // Benutzer-ID aus den Claims extrahieren
             var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             // Tweet dem Benutzer zuordnen und speichern
-            _model.ApplicationUserId = userId;
-            DbContext.Tweets.Add(_model);
+            _modelTweet.ApplicationUserId = userId;
+            DbContext.Tweets.Add(_modelTweet);
             await DbContext.SaveChangesAsync();
+            // Daten neu laden
+            await LoadTweets();
+            // Neuen Tweet bereitstellen
+            _modelTweet = new Tweet();
         }
     }
 
