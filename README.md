@@ -2,7 +2,7 @@
 ## Aufgabe
 Schreibt eine Applikation die sich wie X verhält.
 Beachtet folgende Vorgaben:
-- Auf der Startseite werden alle Tweets von den Leuten angezeigt denen du folgst
+- Auf der Startseite werden die letzten 10 Tweets angezeigt
 - Auf der Startseite kann man einen neuen Tweet erstellen (optional kann man ein Bild hinzufügen)
 - Auf der „Entdecken“ Seite werden die Tweets mit den meisten „Likes“ angezeigt. Zusätzlich gibt es die Möglichkeit User zu suchen
 - Tweets kann man „liken“
@@ -50,7 +50,7 @@ Add-Migration AddUserProperties
 Update-Database
 ```
 ### Tweet
-Neue Klasse die die Tweets der User speichert: Id, Text, ApplicationUserId
+Neue Klasse die die Tweets der User speichert: Id, Text, ApplicationUserId, CreatedAt
 Anlegen der Navigationproperties in Tweet und ApplicationUser
 ```
 public ICollection<Tweet>? Tweets { get; set; }
@@ -136,4 +136,54 @@ Nach der Ermittlung der Id des angemeldeten Users wird der Tweet in der Datenban
 _model.ApplicationUserId = userId;
 DbContext.Tweets.Add(_model);
 await DbContext.SaveChangesAsync();
+// Neuen Tweet bereitstellen
+_modelTweet = new Tweet();
+```
+## Schritt 4 - Liste der Tweets auf Home Page
+Auf der Home Page soll eine Liste der aktuellsten 10 Tweets angezeigt werden.
+Variable für die Tweets
+```
+private List<Tweet>? _modelLastTweets;
+```
+Eine Methode um die letzten 10 Tweets zu laden
+```
+private async Task LoadTweets()
+{
+    // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+    _modelLastTweets = await DbContext.Tweets
+        .OrderByDescending(t => t.CreatedAt)
+        .Include(u => u.ApplicationUser)
+        .Take(10)
+        .ToListAsync();
+    // UI aktualisieren
+    StateHasChanged();
+}
+```
+Die Tweets sollen beim Initialiseren der Page und nach dem Speichern geladen werden
+```
+protected override async Task OnInitializedAsync()
+{
+    await LoadTweets();
+    await base.OnInitializedAsync();
+}
+```
+Die Liste der Tweets wird mit Razor Syntax erstellt
+```
+foreach (var tweet in _modelLastTweets)
+{
+    @* mb-3: margin-bottom 3 *@
+    <div class="mb-3">
+        @* fw-bold: font-weight bold *@
+        <div class="fw-bold">
+            @* Username und Create Time *@
+            @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
+            (@tweet.CreatedAt.ToLocalTime())
+        </div>
+        @* white-space: pre-wrap; sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
+        <div style="white-space: pre-wrap;">
+            @((tweet.Text) ?? string.Empty)
+        </div>
+    </div>
+    <hr />
+}
 ```
