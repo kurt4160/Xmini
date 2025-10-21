@@ -58,8 +58,26 @@ builder.Entity<Tweet>()
     .WithMany(u => u.Tweets)
     .HasForeignKey(t => t.ApplicationUserId);
 ```
+Anlegen der Navigationproperties in Tweet und ApplicationUser
 ```
 Add-Migration AddTweets
 Update-Database
 ```
-
+### Like
+Neue Klasse die die Likes der User speichert. Hat Foreign Keys zu Tweets und ApplicationUser: Id, ApplicationUserId, TweetId
+Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehungen
+```
+builder.Entity<Like>()
+    .HasOne(l => l.ApplicationUser)
+    .WithMany(u => u.Likes)
+    .HasForeignKey(l => l.ApplicationUserId);
+builder.Entity<Like>()
+    .HasOne(l => l.Tweet)
+    .WithMany(t => t.Likes)
+    .HasForeignKey(l => l.TweetId);
+```
+Anlegen der Navigationproperties in Like, Tweet und ApplicationUser
+```
+Add-Migration AddLikes
+Update-Database
+```
