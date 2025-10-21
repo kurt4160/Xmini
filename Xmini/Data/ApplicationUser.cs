@@ -5,6 +5,14 @@ namespace Xmini.Data
     // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
     {
+        public string? Location { get; set; }
+        public byte[]? ProfilePicture { get; set; }
+        public byte[]? BackgroundPicture { get; set; }
+
+        // Navigation property für die Beziehung zu Tweets
+        public ICollection<Tweet>? Tweets { get; set; }
+        // Navigation property für die Beziehung zu Likes
+        public ICollection<Like>? Likes { get; set; }
     }
 
 }

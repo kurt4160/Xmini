@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Xmini.Data;
 
@@ -11,9 +12,11 @@ using Xmini.Data;
 namespace Xmini.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021135200_AddLikes")]
+    partial class AddLikes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -249,7 +252,7 @@ namespace Xmini.Migrations
 
                     b.HasIndex("TweetId");
 
-                    b.ToTable("Likes");
+                    b.ToTable("Like");
                 });
 
             modelBuilder.Entity("Xmini.Data.Tweet", b =>
@@ -264,15 +267,13 @@ namespace Xmini.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(280)
-                        .HasColumnType("nvarchar(280)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("Tweets");
+                    b.ToTable("Tweet");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

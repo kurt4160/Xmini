@@ -1,7 +1,46 @@
 ﻿@page "/"
+@using Xmini.Data
+@using Microsoft.AspNetCore.Authorization
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+
+@attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_model.Text" placeholder="Was gibt's Neues?" />
+        <ValidationMessage For="@(() => _model.Text)" />
+    </div>
+    <button type="submit" class="btn btn-primary">Posten</button>
+</EditForm>
 
-Welcome to your new app.
+@code {
+    // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
+    private readonly Tweet _model = new();
+
+    /// <summary>
+    /// Wird aufgerufen, wenn das Formular erfolgreich übermittelt wurde.
+    /// </summary>
+    /// <returns></returns>
+    private async Task HandleValidSubmit()
+    {
+        // Aktuellen Benutzer ermitteln
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        // Sicherstellen, dass der Benutzer authentifiziert ist
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // Benutzer-ID aus den Claims extrahieren
+            var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            // Tweet dem Benutzer zuordnen und speichern
+            _model.ApplicationUserId = userId;
+            DbContext.Tweets.Add(_model);
+            await DbContext.SaveChangesAsync();
+        }
+    }
+
+}

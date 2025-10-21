@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Xmini.Data;
 
@@ -11,9 +12,11 @@ using Xmini.Data;
 namespace Xmini.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021124818_AddUserProperties")]
+    partial class AddUserProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,52 +232,6 @@ namespace Xmini.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Xmini.Data.Like", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("TweetId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.HasIndex("TweetId");
-
-                    b.ToTable("Likes");
-                });
-
-            modelBuilder.Entity("Xmini.Data.Tweet", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(280)
-                        .HasColumnType("nvarchar(280)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.ToTable("Tweets");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -324,42 +281,6 @@ namespace Xmini.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Xmini.Data.Like", b =>
-                {
-                    b.HasOne("Xmini.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany("Likes")
-                        .HasForeignKey("ApplicationUserId");
-
-                    b.HasOne("Xmini.Data.Tweet", "Tweet")
-                        .WithMany("Likes")
-                        .HasForeignKey("TweetId");
-
-                    b.Navigation("ApplicationUser");
-
-                    b.Navigation("Tweet");
-                });
-
-            modelBuilder.Entity("Xmini.Data.Tweet", b =>
-                {
-                    b.HasOne("Xmini.Data.ApplicationUser", "ApplicationUser")
-                        .WithMany("Tweets")
-                        .HasForeignKey("ApplicationUserId");
-
-                    b.Navigation("ApplicationUser");
-                });
-
-            modelBuilder.Entity("Xmini.Data.ApplicationUser", b =>
-                {
-                    b.Navigation("Likes");
-
-                    b.Navigation("Tweets");
-                });
-
-            modelBuilder.Entity("Xmini.Data.Tweet", b =>
-                {
-                    b.Navigation("Likes");
                 });
 #pragma warning restore 612, 618
         }
