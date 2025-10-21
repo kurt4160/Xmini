@@ -13,7 +13,6 @@ Beachtet folgende Vorgaben:
   - Profilbild (optional)
   - Hintergrundbild für Profil (optional)
 - Optional: User können sich private Nachrichten schicken
-- Optional: Verwendet die von euch schon erstellte Benutzerverwaltung
 - Optional: Anzeige der Anzahl der „Likes“ und die Anzahl der Follower unter jedem Tweet
 
 ## Schritt 1 - Neues Projekt
