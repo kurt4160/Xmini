@@ -51,18 +51,18 @@ Update-Database
 ```
 ### Tweet
 Neue Klasse die die Tweets der User speichert: Id, Text, ApplicationUserId
+Anlegen der Navigationproperties in Tweet und ApplicationUser
+```
+public ICollection<Tweet>? Tweets { get; set; }
+...
+public ApplicationUser? ApplicationUser { get; set; }
+```
 Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehung
 ```
 builder.Entity<Tweet>()
     .HasOne(t => t.ApplicationUser)
     .WithMany(u => u.Tweets)
     .HasForeignKey(t => t.ApplicationUserId);
-```
-Anlegen der Navigationproperties in Tweet und ApplicationUser
-```
-public ICollection<Tweet>? Tweets { get; set; }
-...
-public ApplicationUser? ApplicationUser { get; set; }
 ```
 Anlegen des DbSet für Tweets
 ```
@@ -74,6 +74,14 @@ Update-Database
 ```
 ### Like
 Neue Klasse die die Likes der User speichert. Hat Foreign Keys zu Tweets und ApplicationUser: Id, ApplicationUserId, TweetId
+Anlegen der Navigationproperties in Like, Tweet und ApplicationUser
+```
+public Tweet? Tweet { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+...
+public ICollection<Like>? Likes { get; set; }
+```
 Erweiterung in ApplicationDbContext zur Definition der 1:n Beziehungen
 ```
 builder.Entity<Like>()
@@ -84,14 +92,6 @@ builder.Entity<Like>()
     .HasOne(l => l.Tweet)
     .WithMany(t => t.Likes)
     .HasForeignKey(l => l.TweetId);
-```
-Anlegen der Navigationproperties in Like, Tweet und ApplicationUser
-```
-public Tweet? Tweet { get; set; }
-...
-public ICollection<Like>? Likes { get; set; }
-...
-public ICollection<Like>? Likes { get; set; }
 ```
 Anlegen des DbSet für Tweets
 ```
