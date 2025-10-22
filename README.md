@@ -422,3 +422,42 @@ Das Bild wird unter dem Text angezeigt:
     </div>
 }
 ```
+## Schritt 7 - Eine eigene User Page
+Der Username in der Liste der Tweets soll ein Link zur einer eigenen Page sein. Auf der Page werden öffentliche Informationen zum User und dessen Tweets angezeigt.
+Neue Razor Page UserInfo.razor anlegen. Diese wird über eine Url aufgerufen in der die Id des Users mit übergeben wird.
+```
+@page "/userinfo/{id}"
+...
+[Parameter]
+public string? Id { get; set; }
+```
+Ein Großteil des Codes und des Layouts kann aus der Home Page übernommen werden. Später werden wir das in einer Komponente wiederverwendbar abbilden.
+LoadTweets wird entsprechend angepasst, sodass nur die Tweets des Users gelesen werden:
+```
+private async Task LoadTweets()
+{
+    ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+    // Letzte 10 Tweets des Users laden, sortiert nach Erstellungsdatum absteigend
+    // Inkludiere die zugehörigen Benutzer und die Likes
+    _modelLastTweets = await dbContext.Tweets
+        .Include(u => u.ApplicationUser)
+        .Include(l => l.Likes)
+        .Where(t => t.ApplicationUserId == Id)
+        .OrderByDescending(t => t.CreatedAt)
+        .Take(10)
+        .ToListAsync();
+    // UI aktualisieren
+    StateHasChanged();
+}
+```
+In der Liste der Tweets wird der User als Link angezeigt:
+```
+ @if (tweet.ApplicationUserId != null)
+ {
+     <a href="/UserInfo/@tweet.ApplicationUserId" >@(tweet.ApplicationUser?.UserName)</a>
+ }
+ else
+ {
+     <span>Unbekannt</span>
+ }
+```
