@@ -150,9 +150,13 @@ builder.Services.AddAuthentication(options =>
 
 // --- Ende Authentifizierungs‑ und Identitätsdienste für Blazor ---
 
-// Configure DbContext mit SQL Server
+// Configure DbContextFactory mit SQL Server
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// DbContextFactory erlaubt das Erzeugen von DbContext‑Instanzen bei Bedarf (z. B. in Hintergrunddiensten, Komponenten, Services)
+// ohne direkte Abhängigkeit von der Scoped‑Lebensdauer eines DbContext.
+// Vorteil: Vermeidet Probleme mit Scoped‑Lifetimes in nicht‑HTTP‑Kontexten und verbessert die Testbarkeit.
+// Achtung: Ist eine Änderung gegenüber dem Code welches das Template generiert (AddDbContext).
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

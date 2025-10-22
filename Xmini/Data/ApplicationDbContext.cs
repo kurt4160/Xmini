@@ -8,6 +8,7 @@ namespace Xmini.Data
         // DbSets für die Entitäten
         public DbSet<Like> Likes { get; set; } = default!;
         public DbSet<Tweet> Tweets { get; set; } = default!;
+        public DbSet<Followers> Followers { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -29,6 +30,16 @@ namespace Xmini.Data
                 .HasOne(l => l.Tweet)
                 .WithMany(t => t.Likes)
                 .HasForeignKey(l => l.TweetId);
+            // Konfiguration der Beziehung zwischen ApplicationUser und Followers
+            builder.Entity<Followers>()
+                .HasOne(f => f.FollowerUser)
+                .WithMany(u => u.Followers)
+                .HasForeignKey(f => f.FollowerUserId);
+            // Konfiguration der Beziehung zwischen ApplicationUser und Following
+            builder.Entity<Followers>()
+                .HasOne(f => f.FollowsUser)
+                .WithMany(u => u.Following)
+                .HasForeignKey(f => f.FollowsUserId);
         }
     }
 }
