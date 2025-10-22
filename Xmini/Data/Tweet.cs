@@ -9,6 +9,8 @@ namespace Xmini.Data
         [MaxLength(280, ErrorMessage = "Der Text des Tweets darf maximal 280 Zeichen lang sein.")]
         public string? Text { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public byte[]? Image { get; set; }
+        public string? ContentType { get; set; }
 
         // Foreign key zur bestehenden Identity-Klasse
         public string? ApplicationUserId { get; set; }

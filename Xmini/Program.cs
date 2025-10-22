@@ -65,7 +65,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Sie sorgt dafür, dass die Services für das Rendern, Aktivieren und Verwalten von Komponenten
 // (z. B. Renderer, ComponentActivator, JS‑Interop, Serialisierung/Options) verfügbar sind, damit Komponenten serverseitig gerendert und interaktiv gemacht werden können.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 32 * 1024 * 1024; // 32 MB
+    });
 
 // --- Authentifizierungs‑ und Identitätsdienste für Blazor ---
 
@@ -207,5 +211,16 @@ app.MapRazorComponents<App>()
 // (z. B. Account/Manage‑Seiten, Passwort‑Reset, externe Login‑Callbacks usw.).
 // Wird verwendet, wenn das Identity‑UI‑Paket (Microsoft.AspNetCore.Identity.UI / AddDefaultIdentity bzw. AddIdentity) eingesetzt wird.
 app.MapAdditionalIdentityEndpoints();
+
+app.MapGet("/images/{id}", async (int id, IDbContextFactory<ApplicationDbContext> factory) =>
+{
+    ApplicationDbContext dbContext = await factory.CreateDbContextAsync();
+    var tweet = await dbContext.Tweets.FindAsync(id);
+    if (tweet == null || tweet.Image == null || tweet.ContentType == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.File(tweet.Image, tweet.ContentType);
+});
 
 app.Run();

@@ -16,7 +16,20 @@
         <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_modelTweet.Text" placeholder="Was gibt's Neues?" />
         <ValidationMessage For="@(() => _modelTweet.Text)" />
     </div>
-    <button type="submit" class="btn btn-primary">Posten</button>
+    @if (_modelTweet.Image != null)
+    {
+        <div class="mt-3">
+            <img src="@ImagePreview" alt="Vorschau" class="img-thumbnail" style="max-width:500px;" />
+        </div>
+    }
+    @* justify-content-between: Elemente links und rechts ausrichten *@
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <label class="btn btn-sm btn-outline-primary">
+            Medien
+            <InputFile OnChange="OnInputFileChange" accept="image/*" style="display:none" />
+        </label>
+        <button type="submit" class="btn btn-primary">Posten</button>
+    </div>
 </EditForm>
 <hr/>
 
@@ -63,7 +76,14 @@
                             @((tweet.Text) ?? string.Empty)
                         </p>
                     </div>
-                    @* Zeile 3: Button (links) *@
+                    @* Zeile 3: Bild (falls vorhanden) *@
+                    @if (tweet.Image != null)
+                    {
+                        <div class="mt-3">
+                            <img src="/images/@tweet.Id" alt="Bild" class="img-fluid" />
+                        </div>
+                    }
+                    @* Zeile 4: Button (links) *@
                     <div>
                         <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweet(tweet)">Like</button>
                         @((tweet.Likes?.Count) ?? 0)
@@ -79,6 +99,12 @@
     private Tweet _modelTweet = new();
     private List<Tweet>? _modelLastTweets;
     private string? _userId;
+    // Maximum erlaubt: 10 MB
+    private readonly long _maxFileSize = 10 * 1024 * 1024;
+    // Vorschau-URL für das Bild
+    private string? ImagePreview => _modelTweet.Image != null && _modelTweet.ContentType != null
+        ? $"data:{_modelTweet.ContentType};base64,{Convert.ToBase64String(_modelTweet.Image)}"
+        : null;
 
     /// <summary>
     /// Wird aufgerufen, wenn die Komponente initialisiert wird.
@@ -200,4 +226,42 @@
         // Daten neu laden
         await LoadTweets();
     }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        // Prüfung: Typ
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+            return;
+        }
+        // Prüfung: Größe
+        if (file.Size > _maxFileSize)
+        {
+            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+            return;
+        }
+        try
+        {
+            // // Browser-seitiges Skalieren: RequestImageFileAsync skaliert auf das angegebene Begrenzungsrechteck.
+            var resized = await file.RequestImageFileAsync(file.ContentType, 800, 600);
+
+            using var ms = new MemoryStream();
+            await resized.OpenReadStream(_maxFileSize).CopyToAsync(ms);
+            _modelTweet.Image = ms.ToArray();
+
+            // Metadaten
+            _modelTweet.ContentType = resized.ContentType ?? file.ContentType;
+
+        }
+        catch (Exception ex)
+        {
+            // Fehlerbehandlung (z. B. Größe überschritten o.ä.)
+            Console.WriteLine(ex);
+            _modelTweet.Image = null;
+        }
+    }
+
 }
