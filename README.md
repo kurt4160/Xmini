@@ -240,3 +240,120 @@ private async Task OnLikeTweet(Tweet tweet)
     await LoadTweets();
 }
 ```
+## Schritt 5 - Users folgen
+In der Titelzeile eines Tweets soll ein Button die Möglichkeit bieten dem User des Tweets zu folgen. Bei nochmaligem Drücken soll nicht mehr gefolgt werden.
+Der Text des Buttons soll immer den passenden Text anzeigen ("Folgen" bzw. "Nicht folgen").
+### Klasse für Followers
+Neue Klasse Followers
+```
+public class Followers
+{
+    public int Id { get; set; }
+    // Foreign key zur bestehenden Identity-Klasse
+    // User der dem anderen User folgt
+    public string? FollowerUserId { get; set; }
+    // Foreign key zur bestehenden Identity-Klasse
+    // User der gefolgt wird
+    public string? FollowsUserId { get; set; }
+
+    // Navigation properties
+    public ApplicationUser? FollowerUser { get; set; }
+    public ApplicationUser? FollowsUser { get; set; }
+}
+```
+ApplicationDbContext anpassen
+```
+...
+public DbSet<Followers> Followers { get; set; } = default!;
+...
+// Konfiguration der Beziehung zwischen ApplicationUser und Followers
+builder.Entity<Followers>()
+    .HasOne(f => f.FollowerUser)
+    .WithMany(u => u.Followers)
+    .HasForeignKey(f => f.FollowerUserId);
+// Konfiguration der Beziehung zwischen ApplicationUser und Following
+builder.Entity<Followers>()
+    .HasOne(f => f.FollowsUser)
+    .WithMany(u => u.Following)
+    .HasForeignKey(f => f.FollowsUserId);
+...
+```
+### Page anpassen
+Die Liste der Tweets etwas schöner darstellen:
+```
+    // Alle geladenen Tweets anzeigen
+    // Hierzu Razor-Syntax verwenden
+    foreach (var tweet in _modelLastTweets)
+    {
+        // Context für die Datenbank erstellen
+        ApplicationDbContext dbContext = Factory.CreateDbContext();
+
+        <ul class="list-unstyled">
+            @* mb-3: margin-bottom 3 *@
+            <li class="mb-3">
+                <div class="border rounded p-3">
+                    @* -- Zeile 1: links Text, rechts Button *@
+                    @* Content wird in einer flexbox dargestellt *@
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-bold">
+                            @* Username und Create Time *@
+                            @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
+                            (@tweet.CreatedAt.ToLocalTime())
+                        </div>
+                        @if (tweet.ApplicationUserId != _userId)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUser(tweet)">
+                                @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
+                                @if (dbContext.Followers.Any(f => f.FollowerUserId == _userId && f.FollowsUserId == tweet.ApplicationUserId))
+                                {
+                                    <span>Nicht folgen</span>
+                                }
+                                else
+                                {
+                                    <span>Folgen</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                    @* Zeile 2: mehrzeiliger Text *@
+                    @* White-space pre-wrap sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
+                    <div class="mb-2" style="white-space: pre-wrap;">
+                        <p class="mb-0">
+                            @((tweet.Text) ?? string.Empty)
+                        </p>
+                    </div>
+                    @* Zeile 3: Button (links) *@
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+                        @((tweet.Likes?.Count) ?? 0)
+                    </div>
+                </div>
+            </li>
+        </ul>
+    }
+}
+```
+Methode OnFollowUser implementieren
+```
+private async Task OnFollowUser(Tweet tweet)
+{
+    ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+    var existingFollower = await dbContext.Followers.FirstOrDefaultAsync(f => f.FollowsUserId == tweet.ApplicationUserId);
+    if (existingFollower != null)
+    {
+        dbContext.Followers.Remove(existingFollower);
+    }
+    else
+    {
+        var newFollower = new Followers
+        {
+            FollowerUserId = _userId,
+            FollowsUserId = tweet.ApplicationUserId
+        };
+        dbContext.Followers.Add(newFollower);
+    }
+    await dbContext.SaveChangesAsync();
+    // Daten neu laden
+    await LoadTweets();
+}
+```
