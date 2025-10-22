@@ -338,13 +338,16 @@ Methode OnFollowUser implementieren
 private async Task OnFollowUser(Tweet tweet)
 {
     ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+    // Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller bereits folgt
     var existingFollower = await dbContext.Followers.FirstOrDefaultAsync(f => f.FollowsUserId == tweet.ApplicationUserId);
     if (existingFollower != null)
     {
+        // Folgen aufheben
         dbContext.Followers.Remove(existingFollower);
     }
     else
     {
+        // Neuen Follower hinzufügen
         var newFollower = new Followers
         {
             FollowerUserId = _userId,
