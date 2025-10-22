@@ -39,6 +39,11 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 - Auth Required: Eine Page die nur von angemeldeten Usern aufgerufen werden kann
 - Register: Page zum registrieren eines Users
 - Login: Page zum Anmelden eines Users
+Da der DbContext nicht aus unterschiedlichen Threads verwendet werden kann, wird stattdessen eine DbContextFactory erzeugt. Über diese kann dann jederzeit ein DbContext geholt werden.
+```
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+```
 ## Schritt 2 - Tweets und Likes
 Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
@@ -132,11 +137,19 @@ public string? Text { get; set; }
 ### Speichern
 Nach der Ermittlung der Id des angemeldeten Users wird der Tweet in der Datenbank gespeichert
 ```
-_model.ApplicationUserId = userId;
-DbContext.Tweets.Add(_model);
-await DbContext.SaveChangesAsync();
-// Neuen Tweet bereitstellen
-_modelTweet = new Tweet();
+ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+// Sicherstellen, dass der Benutzer authentifiziert ist
+if (_userId != null)
+{
+    // Tweet dem Benutzer zuordnen und speichern
+    _modelTweet.ApplicationUserId = _userId;
+    dbContext.Tweets.Add(_modelTweet);
+    await dbContext.SaveChangesAsync();
+    // Daten neu laden
+    await LoadTweets();
+    // Neuen Tweet bereitstellen
+    _modelTweet = new Tweet();
+}
 ```
 ## Schritt 4 - Liste der Tweets auf Home Page
 Auf der Home Page soll eine Liste der aktuellsten 10 Tweets angezeigt werden.
@@ -148,16 +161,17 @@ Eine Methode um die letzten 10 Tweets zu laden
 ```
 private async Task LoadTweets()
 {
-// Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
-// Inkludiere die zugehörigen Benutzer und die Likes
-_modelLastTweets = await DbContext.Tweets
-    .OrderByDescending(t => t.CreatedAt)
-    .Include(u => u.ApplicationUser)
-    .Include(l => l.Likes)
-    .Take(10)
-    .ToListAsync();
-// UI aktualisieren
-StateHasChanged();
+    ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+    // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+    // Inkludiere die zugehörigen Benutzer und die Likes
+    _modelLastTweets = await dbContext.Tweets
+        .OrderByDescending(t => t.CreatedAt)
+        .Include(u => u.ApplicationUser)
+        .Include(l => l.Likes)
+        .Take(10)
+        .ToListAsync();
+    // UI aktualisieren
+    StateHasChanged();
 }
 ```
 Die Tweets sollen beim Initialiseren der Page und nach dem Speichern geladen werden
@@ -202,25 +216,146 @@ Methode OnLikeTweet hinzufügen
 ```
 private async Task OnLikeTweet(Tweet tweet)
 {
+    ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
     var newLike = new Like
     {
         TweetId = tweet.Id,
         ApplicationUserId = _userId
     };
     // Prüfen, ob der Benutzer den Tweet bereits geliked hat
-    var existingLike = await DbContext.Likes
+    var existingLike = await dbContext.Likes
         .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == _userId);
     if (existingLike != null)
     {
         // Like entfernen
-        DbContext.Likes.Remove(existingLike);
+        dbContext.Likes.Remove(existingLike);
     }
     else
     {
         // Neues Like hinzufügen
-        DbContext.Likes.Add(newLike);
+        dbContext.Likes.Add(newLike);
     }
-    await DbContext.SaveChangesAsync();
+    await dbContext.SaveChangesAsync();
+    // Daten neu laden
+    await LoadTweets();
+}
+```
+## Schritt 5 - Users folgen
+In der Titelzeile eines Tweets soll ein Button die Möglichkeit bieten dem User des Tweets zu folgen. Bei nochmaligem Drücken soll nicht mehr gefolgt werden.
+Der Text des Buttons soll immer den passenden Text anzeigen ("Folgen" bzw. "Nicht folgen").
+### Klasse für Followers
+Neue Klasse Followers
+```
+public class Followers
+{
+    public int Id { get; set; }
+    // Foreign key zur bestehenden Identity-Klasse
+    // User der dem anderen User folgt
+    public string? FollowerUserId { get; set; }
+    // Foreign key zur bestehenden Identity-Klasse
+    // User der gefolgt wird
+    public string? FollowsUserId { get; set; }
+
+    // Navigation properties
+    public ApplicationUser? FollowerUser { get; set; }
+    public ApplicationUser? FollowsUser { get; set; }
+}
+```
+ApplicationDbContext anpassen
+```
+...
+public DbSet<Followers> Followers { get; set; } = default!;
+...
+// Konfiguration der Beziehung zwischen ApplicationUser und Followers
+builder.Entity<Followers>()
+    .HasOne(f => f.FollowerUser)
+    .WithMany(u => u.Followers)
+    .HasForeignKey(f => f.FollowerUserId);
+// Konfiguration der Beziehung zwischen ApplicationUser und Following
+builder.Entity<Followers>()
+    .HasOne(f => f.FollowsUser)
+    .WithMany(u => u.Following)
+    .HasForeignKey(f => f.FollowsUserId);
+...
+```
+### Page anpassen
+Die Liste der Tweets etwas schöner darstellen:
+```
+    // Alle geladenen Tweets anzeigen
+    // Hierzu Razor-Syntax verwenden
+    foreach (var tweet in _modelLastTweets)
+    {
+        // Context für die Datenbank erstellen
+        ApplicationDbContext dbContext = Factory.CreateDbContext();
+
+        <ul class="list-unstyled">
+            @* mb-3: margin-bottom 3 *@
+            <li class="mb-3">
+                <div class="border rounded p-3">
+                    @* -- Zeile 1: links Text, rechts Button *@
+                    @* Content wird in einer flexbox dargestellt *@
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="fw-bold">
+                            @* Username und Create Time *@
+                            @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
+                            (@tweet.CreatedAt.ToLocalTime())
+                        </div>
+                        @if (tweet.ApplicationUserId != _userId)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUser(tweet)">
+                                @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
+                                @if (dbContext.Followers.Any(f => f.FollowerUserId == _userId && f.FollowsUserId == tweet.ApplicationUserId))
+                                {
+                                    <span>Nicht folgen</span>
+                                }
+                                else
+                                {
+                                    <span>Folgen</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                    @* Zeile 2: mehrzeiliger Text *@
+                    @* White-space pre-wrap sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
+                    <div class="mb-2" style="white-space: pre-wrap;">
+                        <p class="mb-0">
+                            @((tweet.Text) ?? string.Empty)
+                        </p>
+                    </div>
+                    @* Zeile 3: Button (links) *@
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+                        @((tweet.Likes?.Count) ?? 0)
+                    </div>
+                </div>
+            </li>
+        </ul>
+    }
+}
+```
+Methode OnFollowUser implementieren
+```
+private async Task OnFollowUser(Tweet tweet)
+{
+    ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+    // Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller bereits folgt
+    var existingFollower = await dbContext.Followers.FirstOrDefaultAsync(f => f.FollowsUserId == tweet.ApplicationUserId);
+    if (existingFollower != null)
+    {
+        // Folgen aufheben
+        dbContext.Followers.Remove(existingFollower);
+    }
+    else
+    {
+        // Neuen Follower hinzufügen
+        var newFollower = new Followers
+        {
+            FollowerUserId = _userId,
+            FollowsUserId = tweet.ApplicationUserId
+        };
+        dbContext.Followers.Add(newFollower);
+    }
+    await dbContext.SaveChangesAsync();
     // Daten neu laden
     await LoadTweets();
 }
