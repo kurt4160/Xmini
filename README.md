@@ -360,3 +360,65 @@ private async Task OnFollowUser(Tweet tweet)
     await LoadTweets();
 }
 ```
+## Schritt 6 - Bilder in Tweets
+An einen Tweet soll ein Bild angefügt werden können.
+### Erweiterung der Klasse Tweet
+Das Bild wird als byte[] gespeichert. Zusätzlich wird der ContentType benötigt.
+```
+public byte[]? Image { get; set; }
+public string? ContentType { get; set; }
+```
+### Button zum Hochladen des Bildes
+Da sich <InputFile> nicht gut stylen lässt, verstecken wir dies in einem <label>
+```
+<label class="btn btn-sm btn-outline-primary">
+    Medien
+    <InputFile OnChange="OnInputFileChange" accept="image/*" style="display:none" />
+</label>
+```
+In der Methode OnInputFileChange wird geprüft ob die die Dateigröße passt und es der ContentType "image" ist.
+Die Bilder sollen vor dem Hochladen im Browser auf eine max. Größe skaliert werden:
+```
+var resized = await file.RequestImageFileAsync(file.ContentType, 800, 600);
+```
+Der FileStream wird dann über einen MemoryStream im byte[] gespeichert:
+```
+using var ms = new MemoryStream();
+await resized.OpenReadStream(_maxFileSize).CopyToAsync(ms);
+_modelTweet.Image = ms.ToArray();
+```
+Die Vorschau des Bildes wird als base64 direkt im <image> eingebettet:
+```
+<img src="@ImagePreview" alt="Vorschau" class="img-thumbnail" style="max-width:500px;" />
+...
+// Vorschau-URL für das Bild
+private string? ImagePreview => _modelTweet.Image != null && _modelTweet.ContentType != null
+    ? $"data:{_modelTweet.ContentType};base64,{Convert.ToBase64String(_modelTweet.Image)}"
+    : null;
+```
+### Bilder in der Liste der Tweets anzeigen
+Um die Page mit vielen eingebetteten base64 Bildern nicht unnötig zu vergrößeren, legen wir zum Lesen der Bilder eine Minimal API im Program.cs an
+```
+app.MapGet("/images/{id}", async (int id, IDbContextFactory<ApplicationDbContext> factory) =>
+{
+    ApplicationDbContext dbContext = await factory.CreateDbContextAsync();
+    var tweet = await dbContext.Tweets.FindAsync(id);
+    if (tweet == null || tweet.Image == null || tweet.ContentType == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.File(tweet.Image, tweet.ContentType);
+});
+```
+Über die Url /images und der Id des Tweets wird hier das Bild aus der Datenbank gelesen und zum Browser geschickt.
+Eine Minimal API kann einfach und resourcenschonend Daten zur Verfügung stellen. Auch komplexe REST APIs lassen sich damit ohne MVC realisieren und sind ab .NET 8 zu bevorzugen.
+Das Bild wird unter dem Text angezeigt:
+```
+@* Zeile 3: Bild (falls vorhanden) *@
+@if (tweet.Image != null)
+{
+    <div class="mt-3">
+        <img src="/images/@tweet.Id" alt="Bild" class="img-fluid" />
+    </div>
+}
+```
