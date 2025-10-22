@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/userinfo/{id}"
 @using Xmini.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
@@ -8,31 +8,17 @@
 
 @attribute [Authorize]
 
-<PageTitle>Home</PageTitle>
+<PageTitle>User</PageTitle>
 
-<EditForm Model="_modelTweet" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <div class="mb-3">
-        <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_modelTweet.Text" placeholder="Was gibt's Neues?" />
-        <ValidationMessage For="@(() => _modelTweet.Text)" />
-    </div>
-    @if (_modelTweet.Image != null)
-    {
-        <div class="mt-3">
-            <img src="@ImagePreview" alt="Vorschau" class="img-thumbnail" style="max-width:500px;" />
-        </div>
-    }
-    @* justify-content-between: Elemente links und rechts ausrichten *@
-    <div class="d-flex justify-content-between align-items-start mb-2">
-        <label class="btn btn-sm btn-outline-primary">
-            Medien
-            <InputFile OnChange="OnInputFileChange" accept="image/*" style="display:none" />
-        </label>
-        <button type="submit" class="btn btn-primary">Posten</button>
-    </div>
-</EditForm>
-<hr/>
-
+@* Anzeigen des Benutzernamens *@
+@if (User == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @User.UserName;
+}
 @if (_modelLastTweets != null && _modelLastTweets.Count > 0)
 {
     // Alle geladenen Tweets anzeigen
@@ -53,7 +39,7 @@
                             @* Username und Create Time *@
                             @if (tweet.ApplicationUserId != null)
                             {
-                                <a href="/UserInfo/@tweet.ApplicationUserId" >@(tweet.ApplicationUser?.UserName)</a>
+                                <a href="/UserInfo/@tweet.ApplicationUserId">@(tweet.ApplicationUser?.UserName)</a>
                             }
                             else
                             {
@@ -61,11 +47,11 @@
                             }
                             (@tweet.CreatedAt.ToLocalTime())
                         </div>
-                        @if (tweet.ApplicationUserId != _userId)
+                        @if (tweet.ApplicationUserId != Id)
                         {
                             <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUser(tweet)">
                                 @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
-                                @if (dbContext.Followers.Any(f => f.FollowerUserId == _userId && f.FollowsUserId == tweet.ApplicationUserId))
+                                @if (dbContext.Followers.Any(f => f.FollowerUserId == Id && f.FollowsUserId == tweet.ApplicationUserId))
                                 {
                                     <span>Nicht folgen</span>
                                 }
@@ -102,77 +88,36 @@
 }
 
 @code {
-    // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
-    private Tweet _modelTweet = new();
+    [Parameter]
+    public string? Id { get; set; }
+    public ApplicationUser? User { get; set; }
     private List<Tweet>? _modelLastTweets;
-    private string? _userId;
-    // Maximum erlaubt: 10 MB
-    private readonly long _maxFileSize = 10 * 1024 * 1024;
-    // Vorschau-URL für das Bild
-    private string? ImagePreview => _modelTweet.Image != null && _modelTweet.ContentType != null
-        ? $"data:{_modelTweet.ContentType};base64,{Convert.ToBase64String(_modelTweet.Image)}"
-        : null;
 
-    /// <summary>
-    /// Wird aufgerufen, wenn die Komponente initialisiert wird.
-    /// </summary>
-    /// <returns></returns>
     protected override async Task OnInitializedAsync()
     {
-        await GetCurrentUserId();
+        ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+        User = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == Id);
         await LoadTweets();
         await base.OnInitializedAsync();
     }
     /// <summary>
-    /// Die letzten 10 Tweets laden.
+    /// Die Tweets des Users laden.
     /// </summary>
     /// <returns></returns>
     private async Task LoadTweets()
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
-        // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
+        // Letzte 10 Tweets des Users laden, sortiert nach Erstellungsdatum absteigend
         // Inkludiere die zugehörigen Benutzer und die Likes
         _modelLastTweets = await dbContext.Tweets
-            .OrderByDescending(t => t.CreatedAt)
             .Include(u => u.ApplicationUser)
             .Include(l => l.Likes)
+            .Where(t => t.ApplicationUserId == Id)
+            .OrderByDescending(t => t.CreatedAt)
             .Take(10)
             .ToListAsync();
         // UI aktualisieren
         StateHasChanged();
-    }
-    /// <summary>
-    /// Die aktuelle Benutzer-ID ermitteln.
-    /// </summary>
-    /// <returns></returns>
-    private async Task GetCurrentUserId()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            _userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        }
-    }
-    /// <summary>
-    /// Wird aufgerufen, wenn das Formular erfolgreich übermittelt wurde.
-    /// </summary>
-    /// <returns></returns>
-    private async Task HandleValidSubmit()
-    {
-        ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
-        // Sicherstellen, dass der Benutzer authentifiziert ist
-        if (_userId != null)
-        {
-            // Tweet dem Benutzer zuordnen und speichern
-            _modelTweet.ApplicationUserId = _userId;
-            dbContext.Tweets.Add(_modelTweet);
-            await dbContext.SaveChangesAsync();
-            // Daten neu laden
-            await LoadTweets();
-            // Neuen Tweet bereitstellen
-            _modelTweet = new Tweet();
-        }
     }
     /// <summary>
     /// Ein Tweet wird geliked oder das Like wird entfernt.
@@ -185,11 +130,11 @@
         var newLike = new Like
         {
             TweetId = tweet.Id,
-            ApplicationUserId = _userId
+            ApplicationUserId = Id
         };
         // Prüfen, ob der Benutzer den Tweet bereits geliked hat
         var existingLike = await dbContext.Likes
-            .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == _userId);
+            .FirstOrDefaultAsync(l => l.TweetId == tweet.Id && l.ApplicationUserId == Id);
         if (existingLike != null)
         {
             // Like entfernen
@@ -224,7 +169,7 @@
             // Neuen Follower hinzufügen
             var newFollower = new Followers
             {
-                FollowerUserId = _userId,
+                FollowerUserId = Id,
                 FollowsUserId = tweet.ApplicationUserId
             };
             dbContext.Followers.Add(newFollower);
@@ -233,42 +178,4 @@
         // Daten neu laden
         await LoadTweets();
     }
-
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-
-        // Prüfung: Typ
-        if (!file.ContentType.StartsWith("image/"))
-        {
-            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
-            return;
-        }
-        // Prüfung: Größe
-        if (file.Size > _maxFileSize)
-        {
-            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
-            return;
-        }
-        try
-        {
-            // // Browser-seitiges Skalieren: RequestImageFileAsync skaliert auf das angegebene Begrenzungsrechteck.
-            var resized = await file.RequestImageFileAsync(file.ContentType, 800, 600);
-
-            using var ms = new MemoryStream();
-            await resized.OpenReadStream(_maxFileSize).CopyToAsync(ms);
-            _modelTweet.Image = ms.ToArray();
-
-            // Metadaten
-            _modelTweet.ContentType = resized.ContentType ?? file.ContentType;
-
-        }
-        catch (Exception ex)
-        {
-            // Fehlerbehandlung (z. B. Größe überschritten o.ä.)
-            Console.WriteLine(ex);
-            _modelTweet.Image = null;
-        }
-    }
-
 }
