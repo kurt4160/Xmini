@@ -245,7 +245,7 @@ private async Task OnLikeTweet(Tweet tweet)
     await LoadTweets();
 }
 ```
-## Schritt 5 - Users folgen
+## Schritt 6 - Users folgen
 In der Titelzeile eines Tweets soll ein Button die Möglichkeit bieten dem User des Tweets zu folgen. Bei nochmaligem Drücken soll nicht mehr gefolgt werden.
 Der Text des Buttons soll immer den passenden Text anzeigen ("Folgen" bzw. "Nicht folgen").
 ### Klasse für Followers
@@ -282,6 +282,12 @@ builder.Entity<Followers>()
     .WithMany(u => u.Following)
     .HasForeignKey(f => f.FollowsUserId);
 ...
+NavigationProperties in ApplicationUser ergänzen
+```
+// Navigation properties für die Beziehung zu Follower
+public ICollection<Follower>? Followers { get; set; }
+public ICollection<Follower>? Following { get; set; }
+```
 ```
 ### Page anpassen
 Die Liste der Tweets etwas schöner darstellen:
@@ -365,7 +371,7 @@ private async Task OnFollowUser(Tweet tweet)
     await LoadTweets();
 }
 ```
-## Schritt 6 - Bilder in Tweets
+## Schritt 7 - Bilder in Tweets
 An einen Tweet soll ein Bild angefügt werden können.
 ### Erweiterung der Klasse Tweet
 Das Bild wird als byte[] gespeichert. Zusätzlich wird der ContentType benötigt.
@@ -427,7 +433,7 @@ Das Bild wird unter dem Text angezeigt:
     </div>
 }
 ```
-## Schritt 7 - Eine eigene User Page
+## Schritt 8 - Eine eigene User Page
 Der Username in der Liste der Tweets soll ein Link zur einer eigenen Page sein. Auf der Page werden öffentliche Informationen zum User und dessen Tweets angezeigt.
 Neue Razor Page UserInfo.razor anlegen. Diese wird über eine Url aufgerufen in der die Id des Users mit übergeben wird.
 ```
