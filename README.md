@@ -128,7 +128,7 @@ Hier wird twoway DataBinding verwendet
 ```
 Das Model ist hier ein Tweet Objekt
 ```
-private readonly Tweet _model = new();
+private Tweet _modelTweet = new();
 ```
 ### Validierung der Eingaben
 Die Kriterien für die Valdidierung werden über Attribute bei den Properties gesteuert
