@@ -48,7 +48,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
 ### ApplicationUser
-Erstellen einer eigenen Klasse ApplicationUser die von IdentityUser ableitet. In dieser werden die zusätzlichen Properties des Users definiert.
+Verwenden der Klasse ApplicationUser die von IdentityUser ableitet. In dieser werden die zusätzlichen Properties des Users definiert.
 Erweiterung um die Properties: Location, ProfilePicture, BackgroundPicture
 
 todo ContentType der Bilder
