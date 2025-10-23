@@ -282,12 +282,12 @@ builder.Entity<Followers>()
     .WithMany(u => u.Following)
     .HasForeignKey(f => f.FollowsUserId);
 ...
+```
 NavigationProperties in ApplicationUser ergänzen
 ```
 // Navigation properties für die Beziehung zu Follower
 public ICollection<Follower>? Followers { get; set; }
 public ICollection<Follower>? Following { get; set; }
-```
 ```
 ### Page anpassen
 Die Liste der Tweets etwas schöner darstellen:
