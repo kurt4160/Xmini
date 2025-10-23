@@ -100,7 +100,7 @@ builder.Entity<Like>()
     .WithMany(t => t.Likes)
     .HasForeignKey(l => l.TweetId);
 ```
-Anlegen des DbSet für Tweets
+Anlegen des DbSet für Likes
 ```
 public DbSet<Like> Likes { get; set; } = default!;
 ```
