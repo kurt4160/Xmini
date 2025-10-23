@@ -205,7 +205,7 @@ foreach (var tweet in _modelLastTweets)
     <hr />
 }
 ```
-##Schritt 5 - Like Button hinzufügen
+## Schritt 5 - Like Button hinzufügen
 Unter jedem Tweet soll ein Button angezeigt werden. Neben dem Button die Anzahl der Likes für diesen Tweet.
 Der Button soll den Tweet liken oder das Like entfernen wenn es bereist vom User geliked wurde.
 Button in anderem Style und Text mit Like im Razor hinzufügen
