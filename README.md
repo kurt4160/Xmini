@@ -25,7 +25,7 @@ Bei den zusätzlichen Information folgende Einstellungen wählen:
 - Include sample pages: yes
 - Enlist in .NET Aspire orchestration: no
 
-Diese Einstellungen erstellen eine Blazor Server App mit Sample Pages und einer Benutzerverwaltung.
+Diese Einstellungen erstellen eine Blazor Web App mit Sample Pages und einer Benutzerverwaltung.
 Als Connected Service wird eine Connection zur SQL Server Express LocalDB angelegt (für die Benutzerverwaltung). Es wird dazu das EF verwendet. Die Migration wurde aber noch nicht durchgeführt.
 Die Migration über die Package Manager Console starten (Menü View -> Other Windows): 
 ```
@@ -48,7 +48,10 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Migration in die Datenbank.
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
 ### ApplicationUser
+Verwenden der Klasse ApplicationUser die von IdentityUser ableitet. In dieser werden die zusätzlichen Properties des Users definiert.
 Erweiterung um die Properties: Location, ProfilePicture, BackgroundPicture
+
+todo ContentType der Bilder
 ```
 Add-Migration AddUserProperties
 Update-Database
@@ -97,7 +100,7 @@ builder.Entity<Like>()
     .WithMany(t => t.Likes)
     .HasForeignKey(l => l.TweetId);
 ```
-Anlegen des DbSet für Tweets
+Anlegen des DbSet für Likes
 ```
 public DbSet<Like> Likes { get; set; } = default!;
 ```
