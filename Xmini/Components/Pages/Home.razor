@@ -1,11 +1,16 @@
 ﻿@page "/"
+@* Imports *@
 @using Xmini.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 
+@* Iformationen zum angemeldeten User *@
 @inject AuthenticationStateProvider AuthStateProvider
+@* Datenbank-ContextFactory injizieren - über diese dann den DbContext erzeugen *@
+@* DbContext immer neu erzeugen wenn man diesen braucht *@
 @inject IDbContextFactory<ApplicationDbContext> Factory
 
+@* Sicherstellen, dass nur authentifizierte Benutzer auf diese Seite zugreifen können *@
 @attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
@@ -104,15 +109,19 @@
 @code {
     // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
     private Tweet _modelTweet = new();
-    private List<Tweet>? _modelLastTweets;
     private string? _userId;
+    
+    #region Tweets
+    private List<Tweet>? _modelLastTweets;
+    #endregion
+    #region Image
     // Maximum erlaubt: 10 MB
     private readonly long _maxFileSize = 10 * 1024 * 1024;
     // Vorschau-URL für das Bild
     private string? ImagePreview => _modelTweet.Image != null && _modelTweet.ContentType != null
         ? $"data:{_modelTweet.ContentType};base64,{Convert.ToBase64String(_modelTweet.Image)}"
         : null;
-
+    #endregion
     /// <summary>
     /// Wird aufgerufen, wenn die Komponente initialisiert wird.
     /// </summary>

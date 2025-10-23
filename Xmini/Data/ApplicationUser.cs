@@ -11,6 +11,7 @@ namespace Xmini.Data
 
         // Navigation property für die Beziehung zu Tweets
         public ICollection<Tweet>? Tweets { get; set; }
+
         // Navigation property für die Beziehung zu Likes
         public ICollection<Like>? Likes { get; set; }
 
