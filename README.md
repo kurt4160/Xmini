@@ -25,7 +25,7 @@ Bei den zusätzlichen Information folgende Einstellungen wählen:
 - Include sample pages: yes
 - Enlist in .NET Aspire orchestration: no
 
-Diese Einstellungen erstellen eine Blazor Server App mit Sample Pages und einer Benutzerverwaltung.
+Diese Einstellungen erstellen eine Blazor Web App mit Sample Pages und einer Benutzerverwaltung.
 Als Connected Service wird eine Connection zur SQL Server Express LocalDB angelegt (für die Benutzerverwaltung). Es wird dazu das EF verwendet. Die Migration wurde aber noch nicht durchgeführt.
 Die Migration über die Package Manager Console starten (Menü View -> Other Windows): 
 ```
