@@ -49,6 +49,7 @@ Anlegen der notwendigen Klassen bzw. Erweiterung der bestehenden Klassen und Mig
 Optional Erweiterung der ApplicationDbContext Klasse für eine Fluent-API-Konfiguration
 ### ApplicationUser
 Erweiterung um die Properties: Location, ProfilePicture, BackgroundPicture
+todo ContentType der Bilder
 ```
 Add-Migration AddUserProperties
 Update-Database
