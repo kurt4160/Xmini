@@ -187,23 +187,25 @@ protected override async Task OnInitializedAsync()
 ```
 Die Liste der Tweets wird mit Razor Syntax erstellt
 ```
-foreach (var tweet in _modelLastTweets)
+@if (_modelLastTweets != null && _modelLastTweets.Count > 0)
 {
-    @* mb-3: margin-bottom 3 *@
-    <div class="mb-3">
-        @* fw-bold: font-weight bold *@
-        <div class="fw-bold">
-            @* Username und Create Time *@
-            @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
-            (@tweet.CreatedAt.ToLocalTime())
-        </div>
-        @* white-space: pre-wrap; sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
-        <div style="white-space: pre-wrap;">
-            @((tweet.Text) ?? string.Empty)
-        </div>
-    </div>
-    <hr />
-}
+  foreach (var tweet in _modelLastTweets)
+  {
+      @* mb-3: margin-bottom 3 *@
+      <div class="mb-3">
+          @* fw-bold: font-weight bold *@
+          <div class="fw-bold">
+              @* Username und Create Time *@
+              @((tweet.ApplicationUser?.UserName) ?? tweet.ApplicationUserId ?? "Unknown")
+              (@tweet.CreatedAt.ToLocalTime())
+          </div>
+          @* white-space: pre-wrap; sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
+          <div style="white-space: pre-wrap;">
+              @((tweet.Text) ?? string.Empty)
+          </div>
+      </div>
+      <hr />
+  }
 ```
 ## Schritt 5 - Like Button hinzufügen
 Unter jedem Tweet soll ein Button angezeigt werden. Neben dem Button die Anzahl der Likes für diesen Tweet.
