@@ -40,6 +40,7 @@ Jetzt kann die Applikation gestartet werden. Folgende Pages werden automatisch e
 - Register: Page zum registrieren eines Users
 - Login: Page zum Anmelden eines Users
 Da der DbContext nicht aus unterschiedlichen Threads verwendet werden kann, wird stattdessen eine DbContextFactory erzeugt. Über diese kann dann jederzeit ein DbContext geholt werden.
+https://learn.microsoft.com/en-us/aspnet/core/blazor/blazor-ef-core?view=aspnetcore-7.0#new-dbcontext-instances
 ```
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
