@@ -7,7 +7,9 @@ namespace Xmini.Data
     {
         public string? Location { get; set; }
         public byte[]? ProfilePicture { get; set; }
+        public string? ProfilePictureContentType { get; set; }
         public byte[]? BackgroundPicture { get; set; }
+        public string? BackgroundPictureContentType { get; set; }
 
         // Navigation property für die Beziehung zu Tweets
         public ICollection<Tweet>? Tweets { get; set; }

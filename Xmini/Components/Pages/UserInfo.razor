@@ -1,7 +1,9 @@
 ﻿@page "/userinfo/{id}"
+@* Der User wird über die Id in der URL identifiziert *@
 @using Xmini.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@using Xmini.Tools
 
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IDbContextFactory<ApplicationDbContext> Factory
@@ -13,12 +15,27 @@
 @* Anzeigen des Benutzernamens *@
 @if (User == null)
 {
+    @* Wenn noch kein User werden Daten noch geladen oder es gibt den User nicht *@
     <p><em>Loading...</em></p>
 }
 else
 {
+    @if (User.BackgroundPicture != null)
+    {
+        <div class="mt-3">
+            <img src="@BackgroundImageSource" alt="Hintergrundbild" class="img-fluid" />
+        </div>
+    }
     @User.UserName;
+    @if (_isCurrentUser)
+    {
+        <label class="btn btn-sm btn-outline-primary">
+            Medien
+            <InputFile OnChange="OnBackgroundFileChangeAsync" accept="image/*" style="display:none" />
+        </label>
+    }
 }
+@* Anzeigen der letzten Tweets des Benutzers *@
 @if (_modelLastTweets != null && _modelLastTweets.Count > 0)
 {
     // Alle geladenen Tweets anzeigen
@@ -49,7 +66,7 @@ else
                         </div>
                         @if (tweet.ApplicationUserId != Id)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUser(tweet)">
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUserAsync(tweet)">
                                 @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
                                 @if (dbContext.Followers.Any(f => f.FollowerUserId == Id && f.FollowsUserId == tweet.ApplicationUserId))
                                 {
@@ -78,7 +95,7 @@ else
                     }
                     @* Zeile 4: Button (links) *@
                     <div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweetAsync(tweet)">Like</button>
                         @((tweet.Likes?.Count) ?? 0)
                     </div>
                 </div>
@@ -92,19 +109,44 @@ else
     public string? Id { get; set; }
     public ApplicationUser? User { get; set; }
     private List<Tweet>? _modelLastTweets;
+    private bool _isCurrentUser = false;
+    // Maximum erlaubt: 10 MB
+    private readonly long _maxFileSize = 10 * 1024 * 1024;
+    private string _backgroundImageVersion = DateTime.UtcNow.Ticks.ToString();
 
     protected override async Task OnInitializedAsync()
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         User = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == Id);
-        await LoadTweets();
+        if (User == null)
+        {
+            // User nicht gefunden, evtl. Fehlerbehandlung hier
+            return;
+        }
+        _isCurrentUser = await CheckIfCurrentUserAsync(User.Id);
+        await LoadTweetsAsync();
         await base.OnInitializedAsync();
+    }
+    private string BackgroundImageSource => $"/images/background/{User?.Id}?v={_backgroundImageVersion}";
+    /// <summary>
+    /// Prüfen, ob der angezeigte User der aktuell angemeldete User ist.
+    /// </summary>
+    /// <returns></returns>
+    private async Task<bool> CheckIfCurrentUserAsync(string userId)
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            return userId == user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+        return false;
     }
     /// <summary>
     /// Die Tweets des Users laden.
     /// </summary>
     /// <returns></returns>
-    private async Task LoadTweets()
+    private async Task LoadTweetsAsync()
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         // Letzte 10 Tweets des Users laden, sortiert nach Erstellungsdatum absteigend
@@ -124,7 +166,7 @@ else
     /// </summary>
     /// <param name="tweet"></param>
     /// <returns></returns>
-    private async Task OnLikeTweet(Tweet tweet)
+    private async Task OnLikeTweetAsync(Tweet tweet)
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         var newLike = new Like
@@ -147,14 +189,14 @@ else
         }
         await dbContext.SaveChangesAsync();
         // Daten neu laden
-        await LoadTweets();
+        await LoadTweetsAsync();
     }
     /// <summary>
     /// Ein Benutzer wird gefolgt oder das Folgen wird aufgehoben.
     /// </summary>
     /// <param name="tweet"></param>
     /// <returns></returns>
-    private async Task OnFollowUser(Tweet tweet)
+    private async Task OnFollowUserAsync(Tweet tweet)
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         // Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller bereits folgt
@@ -176,6 +218,53 @@ else
         }
         await dbContext.SaveChangesAsync();
         // Daten neu laden
-        await LoadTweets();
+        await LoadTweetsAsync();
+    }
+    private async Task OnBackgroundFileChangeAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (User == null)
+        {
+            // Kein Benutzer geladen
+            return;
+        }
+        // Prüfung: Typ
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+            return;
+        }
+        // Prüfung: Größe
+        if (file.Size > _maxFileSize)
+        {
+            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+            return;
+        }
+        try
+        {
+            // // Browser-seitiges Skalieren: RequestImageFileAsync skaliert auf das angegebene Begrenzungsrechteck.
+            var resized = await file.RequestImageFileAsync(file.ContentType, 1024, 768);
+
+            using var ms = new MemoryStream();
+            await resized.OpenReadStream(_maxFileSize).CopyToAsync(ms);
+            // Bild zuschneiden (unten abschneiden)
+            User.BackgroundPicture = ImageProcessing.CropTop(ms.ToArray(), resized.ContentType);
+
+            // Metadaten
+            User.BackgroundPictureContentType = resized.ContentType;
+            ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+            dbContext.Attach(User);
+            dbContext.Entry(User).State = EntityState.Modified;
+            await dbContext.SaveChangesAsync();
+            _backgroundImageVersion = DateTime.UtcNow.Ticks.ToString();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Fehlerbehandlung (z. B. Größe überschritten o.ä.)
+            Console.WriteLine(ex);
+            User.BackgroundPicture = null;
+        }
     }
 }

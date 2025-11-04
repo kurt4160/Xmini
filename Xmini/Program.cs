@@ -223,4 +223,14 @@ app.MapGet("/images/{id}", async (int id, IDbContextFactory<ApplicationDbContext
     return Results.File(tweet.Image, tweet.ContentType);
 });
 
+app.MapGet("/images/background/{userid}", async (string userid, IDbContextFactory<ApplicationDbContext> factory) =>
+{
+    ApplicationDbContext dbContext = await factory.CreateDbContextAsync();
+    var user = await dbContext.Users.FindAsync(userid);
+    if (user == null || user.BackgroundPicture == null || user.BackgroundPictureContentType == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.File(user.BackgroundPicture, user.BackgroundPictureContentType);
+});
 app.Run();

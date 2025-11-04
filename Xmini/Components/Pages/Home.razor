@@ -15,7 +15,7 @@
 
 <PageTitle>Home</PageTitle>
 
-<EditForm Model="_modelTweet" OnValidSubmit="HandleValidSubmit">
+<EditForm Model="_modelTweet" OnValidSubmit="HandleValidSubmitAsync">
     <DataAnnotationsValidator />
     <div class="mb-3">
         <InputTextArea id="text" class="form-control" rows="3" @bind-Value="_modelTweet.Text" placeholder="Was gibt's Neues?" />
@@ -31,7 +31,7 @@
     <div class="d-flex justify-content-between align-items-start mb-2">
         <label class="btn btn-sm btn-outline-primary">
             Medien
-            <InputFile OnChange="OnInputFileChange" accept="image/*" style="display:none" />
+            <InputFile OnChange="OnInputFileChangeAsync" accept="image/*" style="display:none" />
         </label>
         <button type="submit" class="btn btn-primary">Posten</button>
     </div>
@@ -68,7 +68,7 @@
                         </div>
                         @if (tweet.ApplicationUserId != _userId)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUser(tweet)">
+                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUserAsync(tweet)">
                                 @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
                                 @if (dbContext.Followers.Any(f => f.FollowerUserId == _userId && f.FollowsUserId == tweet.ApplicationUserId))
                                 {
@@ -97,7 +97,7 @@
                     }
                     @* Zeile 4: Button (links) *@
                     <div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweet(tweet)">Like</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweetAsync(tweet)">Like</button>
                         @((tweet.Likes?.Count) ?? 0)
                     </div>
                 </div>
@@ -128,15 +128,15 @@
     /// <returns></returns>
     protected override async Task OnInitializedAsync()
     {
-        await GetCurrentUserId();
-        await LoadTweets();
+        await GetCurrentUserIdAsync();
+        await LoadTweetsAsync();
         await base.OnInitializedAsync();
     }
     /// <summary>
     /// Die letzten 10 Tweets laden.
     /// </summary>
     /// <returns></returns>
-    private async Task LoadTweets()
+    private async Task LoadTweetsAsync()
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         // Letzte 10 Tweets laden, sortiert nach Erstellungsdatum absteigend
@@ -154,7 +154,7 @@
     /// Die aktuelle Benutzer-ID ermitteln.
     /// </summary>
     /// <returns></returns>
-    private async Task GetCurrentUserId()
+    private async Task GetCurrentUserIdAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -167,7 +167,7 @@
     /// Wird aufgerufen, wenn das Formular erfolgreich übermittelt wurde.
     /// </summary>
     /// <returns></returns>
-    private async Task HandleValidSubmit()
+    private async Task HandleValidSubmitAsync()
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         // Sicherstellen, dass der Benutzer authentifiziert ist
@@ -178,7 +178,7 @@
             dbContext.Tweets.Add(_modelTweet);
             await dbContext.SaveChangesAsync();
             // Daten neu laden
-            await LoadTweets();
+            await LoadTweetsAsync();
             // Neuen Tweet bereitstellen
             _modelTweet = new Tweet();
         }
@@ -188,7 +188,7 @@
     /// </summary>
     /// <param name="tweet"></param>
     /// <returns></returns>
-    private async Task OnLikeTweet(Tweet tweet)
+    private async Task OnLikeTweetAsync(Tweet tweet)
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         var newLike = new Like
@@ -211,14 +211,14 @@
         }
         await dbContext.SaveChangesAsync();
         // Daten neu laden
-        await LoadTweets();
+        await LoadTweetsAsync();
     }
     /// <summary>
     /// Ein Benutzer wird gefolgt oder das Folgen wird aufgehoben.
     /// </summary>
     /// <param name="tweet"></param>
     /// <returns></returns>
-    private async Task OnFollowUser(Tweet tweet)
+    private async Task OnFollowUserAsync(Tweet tweet)
     {
         ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
         // Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller bereits folgt
@@ -240,10 +240,10 @@
         }
         await dbContext.SaveChangesAsync();
         // Daten neu laden
-        await LoadTweets();
+        await LoadTweetsAsync();
     }
 
-    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    private async Task OnInputFileChangeAsync(InputFileChangeEventArgs e)
     {
         var file = e.File;
 
