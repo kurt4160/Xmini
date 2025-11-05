@@ -49,3 +49,10 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+/* Stelle sicher, dass diese Datei NACH bootstrap.css geladen wird */
+.mb-6 {
+    margin-bottom: 4.5rem; /* Wert nach Wunsch anpassen */
+}
+.mt-6 {
+    margin-top: 4.5rem; /* Wert nach Wunsch anpassen */
+}

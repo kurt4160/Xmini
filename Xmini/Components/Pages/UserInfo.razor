@@ -20,21 +20,35 @@
 }
 else
 {
+    @* Bilder nur anzeigen wenn es auch welche gibt *@
     @if (User.BackgroundPicture != null)
     {
-        <div class="mt-3">
-            <img src="@BackgroundImageSource" alt="Hintergrundbild" class="img-fluid" />
+        <div class="user-header">
+            <img src="@BackgroundImageSource" alt="Headerbild" class="header-img" />
+            <div class="avatar-wrap">
+                <img src="@ProfileImageSource" alt="Avatar" class="avatar-img" />
+            </div>
         </div>
     }
-    @User.UserName;
+    <div class="fw-bold mt-6">@User.UserName</div>
+    @* Wenn der angezeigte User der aktuelle User ist die Buttons zum hochladen der Bilder anzeigen *@
     @if (_isCurrentUser)
     {
-        <label class="btn btn-sm btn-outline-primary">
-            Medien
-            <InputFile OnChange="OnBackgroundFileChangeAsync" accept="image/*" style="display:none" />
-        </label>
+        <div class="mb-2">
+            <label class="btn btn-sm btn-outline-primary">
+                Hintergrund
+                <InputFile OnChange="OnBackgroundFileChangeAsync" accept="image/*" style="display:none"/>
+            </label>
+            <label class="btn btn-sm btn-outline-primary">
+                Profil
+                <InputFile OnChange="OnProfileFileChangeAsync" accept="image/*" style="display:none"/>
+            </label>
+        </div>
     }
+;
 }
+<h3 class="mt-3">Posts</h3>
+<hr />
 @* Anzeigen der letzten Tweets des Benutzers *@
 @if (_modelLastTweets != null && _modelLastTweets.Count > 0)
 {
@@ -113,6 +127,7 @@ else
     // Maximum erlaubt: 10 MB
     private readonly long _maxFileSize = 10 * 1024 * 1024;
     private string _backgroundImageVersion = DateTime.UtcNow.Ticks.ToString();
+    private string _profileImageVersion = DateTime.UtcNow.Ticks.ToString();
 
     protected override async Task OnInitializedAsync()
     {
@@ -128,6 +143,7 @@ else
         await base.OnInitializedAsync();
     }
     private string BackgroundImageSource => $"/images/background/{User?.Id}?v={_backgroundImageVersion}";
+    private string ProfileImageSource => $"/images/profile/{User?.Id}?v={_profileImageVersion}";
     /// <summary>
     /// Prüfen, ob der angezeigte User der aktuell angemeldete User ist.
     /// </summary>
@@ -224,23 +240,13 @@ else
     {
         var file = e.File;
 
-        if (User == null)
-        {
-            // Kein Benutzer geladen
-            return;
-        }
+        if (User == null) return; // Kein Benutzer geladen
+
         // Prüfung: Typ
-        if (!file.ContentType.StartsWith("image/"))
-        {
-            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
-            return;
-        }
+        if (!file.ContentType.StartsWith("image/")) return; // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+
         // Prüfung: Größe
-        if (file.Size > _maxFileSize)
-        {
-            // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
-            return;
-        }
+        if (file.Size > _maxFileSize) return; // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
         try
         {
             // // Browser-seitiges Skalieren: RequestImageFileAsync skaliert auf das angegebene Begrenzungsrechteck.
@@ -265,6 +271,43 @@ else
             // Fehlerbehandlung (z. B. Größe überschritten o.ä.)
             Console.WriteLine(ex);
             User.BackgroundPicture = null;
+        }
+    }
+    private async Task OnProfileFileChangeAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (User == null) return; // Kein Benutzer geladen
+
+        // Prüfung: Typ
+        if (!file.ContentType.StartsWith("image/")) return; // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+
+        // Prüfung: Größe
+        if (file.Size > _maxFileSize) return; // Fehlermeldungen lassen wir mal weg - einfach nicht hochladen
+        try
+        {
+            // // Browser-seitiges Skalieren: RequestImageFileAsync skaliert auf das angegebene Begrenzungsrechteck.
+            var resized = await file.RequestImageFileAsync(file.ContentType, 135, 768);
+
+            using var ms = new MemoryStream();
+            await resized.OpenReadStream(_maxFileSize).CopyToAsync(ms);
+            // Bild zuschneiden (unten abschneiden)
+            User.ProfilePicture = ImageProcessing.CropTop(ms.ToArray(), resized.ContentType, 135);
+
+            // Metadaten
+            User.ProfilePictureContentType = resized.ContentType;
+            ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+            dbContext.Attach(User);
+            dbContext.Entry(User).State = EntityState.Modified;
+            await dbContext.SaveChangesAsync();
+            _profileImageVersion = DateTime.UtcNow.Ticks.ToString();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Fehlerbehandlung (z. B. Größe überschritten o.ä.)
+            Console.WriteLine(ex);
+            User.ProfilePicture = null;
         }
     }
 }

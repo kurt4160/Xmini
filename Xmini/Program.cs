@@ -233,4 +233,14 @@ app.MapGet("/images/background/{userid}", async (string userid, IDbContextFactor
     }
     return Results.File(user.BackgroundPicture, user.BackgroundPictureContentType);
 });
+app.MapGet("/images/profile/{userid}", async (string userid, IDbContextFactory<ApplicationDbContext> factory) =>
+{
+    ApplicationDbContext dbContext = await factory.CreateDbContextAsync();
+    var user = await dbContext.Users.FindAsync(userid);
+    if (user == null || user.ProfilePicture == null || user.ProfilePictureContentType == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.File(user.ProfilePicture, user.ProfilePictureContentType);
+});
 app.Run();
