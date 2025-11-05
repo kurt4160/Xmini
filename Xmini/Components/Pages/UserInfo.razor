@@ -119,14 +119,20 @@ else
 }
 
 @code {
+    // Parameter für die UserId
     [Parameter]
     public string? Id { get; set; }
+    // Der angezeigte User
     public ApplicationUser? User { get; set; }
+    // Letzte Tweets des Users
     private List<Tweet>? _modelLastTweets;
+    // Ob der angezeigte User der aktuell angemeldete User ist
     private bool _isCurrentUser = false;
     // Maximum erlaubt: 10 MB
     private readonly long _maxFileSize = 10 * 1024 * 1024;
+    // Versions-Strings für das Hintergrundbild, damit nach dem Hochladen das neue Bild angezeigt wird
     private string _backgroundImageVersion = DateTime.UtcNow.Ticks.ToString();
+    // Versions-Strings für das Profilbild, damit nach dem Hochladen das neue Bild angezeigt wird
     private string _profileImageVersion = DateTime.UtcNow.Ticks.ToString();
 
     protected override async Task OnInitializedAsync()
@@ -138,12 +144,15 @@ else
             // User nicht gefunden, evtl. Fehlerbehandlung hier
             return;
         }
+        // Prüfen, ob der angezeigte User der aktuell angemeldete User ist
         _isCurrentUser = await CheckIfCurrentUserAsync(User.Id);
         await LoadTweetsAsync();
         await base.OnInitializedAsync();
     }
+    /// Pfade für die Bilder mit Versions-String
     private string BackgroundImageSource => $"/images/background/{User?.Id}?v={_backgroundImageVersion}";
     private string ProfileImageSource => $"/images/profile/{User?.Id}?v={_profileImageVersion}";
+
     /// <summary>
     /// Prüfen, ob der angezeigte User der aktuell angemeldete User ist.
     /// </summary>
@@ -236,6 +245,11 @@ else
         // Daten neu laden
         await LoadTweetsAsync();
     }
+    /// <summary>
+    /// Hintergrundbild hochladen und verarbeiten.
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
     private async Task OnBackgroundFileChangeAsync(InputFileChangeEventArgs e)
     {
         var file = e.File;
@@ -260,9 +274,11 @@ else
             // Metadaten
             User.BackgroundPictureContentType = resized.ContentType;
             ApplicationDbContext dbContext = await Factory.CreateDbContextAsync();
+            // User Objekt an den DbContext anhängen und als geändert markieren
             dbContext.Attach(User);
             dbContext.Entry(User).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
+            // Versions-String aktualisieren, damit das neue Bild angezeigt wird
             _backgroundImageVersion = DateTime.UtcNow.Ticks.ToString();
             StateHasChanged();
         }
@@ -273,6 +289,11 @@ else
             User.BackgroundPicture = null;
         }
     }
+    /// <summary>
+    /// Profilbild hochladen und verarbeiten.
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
     private async Task OnProfileFileChangeAsync(InputFileChangeEventArgs e)
     {
         var file = e.File;
