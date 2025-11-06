@@ -3,6 +3,7 @@
 @using Xmini.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
+@using Xmini.Components.Pages.Components
 
 @* Iformationen zum angemeldeten User *@
 @inject AuthenticationStateProvider AuthStateProvider
@@ -38,73 +39,7 @@
 </EditForm>
 <hr/>
 
-@if (_modelLastTweets != null && _modelLastTweets.Count > 0)
-{
-    // Alle geladenen Tweets anzeigen
-    // Hierzu Razor-Syntax verwenden
-    foreach (var tweet in _modelLastTweets)
-    {
-        // Context für die Datenbank erstellen
-        ApplicationDbContext dbContext = Factory.CreateDbContext();
-
-        <ul class="list-unstyled">
-            @* mb-3: margin-bottom 3 *@
-            <li class="mb-3">
-                <div class="border rounded p-3">
-                    @* -- Zeile 1: links Text, rechts Button *@
-                    @* Content wird in einer flexbox dargestellt *@
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="fw-bold">
-                            @* Username und Create Time *@
-                            @if (tweet.ApplicationUserId != null)
-                            {
-                                <a href="/UserInfo/@tweet.ApplicationUserId" >@(tweet.ApplicationUser?.UserName)</a>
-                            }
-                            else
-                            {
-                                <span>Unbekannt</span>
-                            }
-                            (@tweet.CreatedAt.ToLocalTime())
-                        </div>
-                        @if (tweet.ApplicationUserId != _userId)
-                        {
-                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnFollowUserAsync(tweet)">
-                                @* Prüfen, ob der aktuelle Benutzer dem Tweet-Ersteller folgt und entsprechend den Button-Text anpassen *@
-                                @if (dbContext.Followers.Any(f => f.FollowerUserId == _userId && f.FollowsUserId == tweet.ApplicationUserId))
-                                {
-                                    <span>Nicht folgen</span>
-                                }
-                                else
-                                {
-                                    <span>Folgen</span>
-                                }
-                            </button>
-                        }
-                    </div>
-                    @* Zeile 2: mehrzeiliger Text *@
-                    @* White-space pre-wrap sorgt dafür, dass Zeilenumbrüche im Text erhalten bleiben *@
-                    <div class="mb-2" style="white-space: pre-wrap;">
-                        <p class="mb-0">
-                            @((tweet.Text) ?? string.Empty)
-                        </p>
-                    </div>
-                    @* Zeile 3: Bild (falls vorhanden) *@
-                    @if (tweet.Image != null)
-                    {
-                        <div class="mt-3">
-                            <img src="/images/@tweet.Id" alt="Bild" class="img-fluid" />
-                        </div>
-                    }
-                    @* Zeile 4: Button (links) *@
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => OnLikeTweetAsync(tweet)">Like</button>
-                        @((tweet.Likes?.Count) ?? 0)
-                    </div>
-                </div>
-            </li>
-        </ul>
-    }
-}
+<TweetListComponent />
 
 @code {
     // Da hier nur ein Tweet erstellt wird, kann das Model immer neu angelegt werden.
