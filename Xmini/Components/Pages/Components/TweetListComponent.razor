@@ -77,10 +77,14 @@
 @code {
     private List<Tweet>? _modelLastTweets;
     private string? _userId;
-
+    
+    [Parameter]
+    public string? ShowOnlyUserId { get; set; }
+    
     protected override async Task OnInitializedAsync()
     {
         await GetCurrentUserIdAsync();
+        await LoadTweetsAsync();
         await base.OnInitializedAsync();   
     }
     /// <summary>
@@ -107,6 +111,7 @@
         // Inkludiere die zugehörigen Benutzer und die Likes
         _modelLastTweets = await dbContext.Tweets
             .OrderByDescending(t => t.CreatedAt)
+            .Where(t => string.IsNullOrEmpty(ShowOnlyUserId) || t.ApplicationUserId == ShowOnlyUserId)
             .Include(u => u.ApplicationUser)
             .Include(l => l.Likes)
             .Take(10)
