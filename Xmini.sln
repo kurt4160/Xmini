@@ -5,6 +5,10 @@ VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini", "Xmini\Xmini.csproj", "{53650AFE-66D7-48B3-BCBF-EE119B92BFC6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.data", "Xmini.data\Xmini.data.csproj", "{1F05BD9D-1BA2-452D-A597-96B5F587463A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.shared", "Xmini.shared\Xmini.shared.csproj", "{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{53650AFE-66D7-48B3-BCBF-EE119B92BFC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53650AFE-66D7-48B3-BCBF-EE119B92BFC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53650AFE-66D7-48B3-BCBF-EE119B92BFC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F05BD9D-1BA2-452D-A597-96B5F587463A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F05BD9D-1BA2-452D-A597-96B5F587463A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F05BD9D-1BA2-452D-A597-96B5F587463A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F05BD9D-1BA2-452D-A597-96B5F587463A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

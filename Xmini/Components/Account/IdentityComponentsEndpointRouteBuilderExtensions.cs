@@ -9,6 +9,7 @@ using Microsoft.Extensions.Primitives;
 using Xmini.Components.Account.Pages;
 using Xmini.Components.Account.Pages.Manage;
 using Xmini.Data;
+using Xmini.data.Entities;
 
 namespace Microsoft.AspNetCore.Routing
 {

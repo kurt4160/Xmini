@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Xmini.Data
+namespace Xmini.data.Entities
 {
     public class Tweet
     {

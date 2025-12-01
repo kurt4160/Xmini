@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Xmini.Components;
 using Xmini.Components.Account;
 using Xmini.Data;
-
+using Xmini.data.Entities;
 
 
 // Die statische Methode `WebApplication.CreateBuilder` erstellt und initialisiert eine Instanz

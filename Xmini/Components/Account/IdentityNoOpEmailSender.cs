@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Xmini.Data;
+using Xmini.data.Entities;
 
 namespace Xmini.Components.Account
 {

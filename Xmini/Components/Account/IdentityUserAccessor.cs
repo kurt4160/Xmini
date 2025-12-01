@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Xmini.Data;
+using Xmini.data.Entities;
 
 namespace Xmini.Components.Account
 {
