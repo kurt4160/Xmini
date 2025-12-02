@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-Xmini.wasm-1506afa5-d106-472c-8cb3-af962c4dd371</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Xmini.data\Xmini.data.csproj" />
+    <ProjectReference Include="..\..\Xmini.shared\Xmini.shared.csproj" />
+    <ProjectReference Include="..\Xmini.wasm.Client\Xmini.wasm.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.21" />
+  </ItemGroup>
+
+</Project>

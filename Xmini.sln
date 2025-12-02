@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.data", "Xmini.data\Xm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.shared", "Xmini.shared\Xmini.shared.csproj", "{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.wasm", "Xmini.wasm\Xmini.wasm\Xmini.wasm.csproj", "{23A4EF17-8F6F-47CB-B254-55FF0976DA8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xmini.wasm.Client", "Xmini.wasm\Xmini.wasm.Client\Xmini.wasm.Client.csproj", "{6890D2C7-6A17-49EE-AEAD-D067A5F49342}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F5A18D4-B74A-AF75-258B-EBBE33E71B81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23A4EF17-8F6F-47CB-B254-55FF0976DA8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23A4EF17-8F6F-47CB-B254-55FF0976DA8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23A4EF17-8F6F-47CB-B254-55FF0976DA8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23A4EF17-8F6F-47CB-B254-55FF0976DA8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6890D2C7-6A17-49EE-AEAD-D067A5F49342}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6890D2C7-6A17-49EE-AEAD-D067A5F49342}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6890D2C7-6A17-49EE-AEAD-D067A5F49342}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6890D2C7-6A17-49EE-AEAD-D067A5F49342}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
